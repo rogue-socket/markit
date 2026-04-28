@@ -60,6 +60,31 @@ your comment
 
 Annotations are stored in `~/.mdgrill/annotations/<hash>.json` (one file per source document, keyed by SHA-256 of the absolute path). Source `.md` files are never modified.
 
+### Data on disk
+
+The only files mdgrill writes are in `~/.mdgrill/`:
+
+```
+~/.mdgrill/
+├── annotations/          # one JSON file per annotated document
+│   ├── <sha256>.json
+│   └── ...
+└── config.json           # optional shortcut overrides
+```
+
+No temp files, no caches, no background processes. Closing the window (Cmd+W) terminates the app and frees all memory. Sidecar JSONs remain on disk so annotations survive restarts.
+
+```sh
+# See what's accumulated:
+ls -lh ~/.mdgrill/annotations/
+
+# Remove annotations for a specific file:
+rm ~/.mdgrill/annotations/<hash>.json
+
+# Remove all annotations:
+rm -rf ~/.mdgrill/annotations/
+```
+
 ## Configuration
 
 Edit `~/.mdgrill/config.json` to override shortcuts:
