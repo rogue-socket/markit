@@ -1,6 +1,18 @@
 # mdgrill
 
-A native macOS app for annotating rendered markdown files. Select text, attach comments, export quote+comment pairs to the clipboard. Source files are never modified — annotations live in a sidecar.
+**Annotate markdown files on macOS.** Highlight text, add comments, export everything to your clipboard. Your source files are never touched.
+
+A lightweight, native macOS markdown annotation tool built with Swift and SwiftUI. Read markdown with rendered previews, select passages, attach notes, and export annotated quotes — perfect for code review, document feedback, research notes, and editorial markup. No Electron, no web app, no account required.
+
+**Key features:**
+- Render any `.md` file with full GitHub-flavored markdown support
+- Select text and attach inline comments
+- Yellow highlights mark all annotations
+- Export all quote+comment pairs to clipboard in one shortcut
+- Annotations stored in sidecar JSON — source files are never modified
+- Dark mode support
+- Configurable keyboard shortcuts
+- Single binary, under 600KB, launches instantly
 
 ## Download
 
