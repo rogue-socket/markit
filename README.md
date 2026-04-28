@@ -2,7 +2,18 @@
 
 A native macOS app for annotating rendered markdown files. Select text, attach comments, export quote+comment pairs to the clipboard. Source files are never modified — annotations live in a sidecar.
 
-## Build
+## Download
+
+Grab the latest release from [GitHub Releases](https://github.com/rogue-socket/markit/releases/latest).
+
+1. Download `mdgrill-macos.zip`
+2. Unzip and drag `mdgrill.app` to `/Applications`
+3. (Optional) Add the CLI shim to your PATH:
+   ```sh
+   curl -sL https://raw.githubusercontent.com/rogue-socket/markit/main/mdgrill -o /usr/local/bin/mdgrill && chmod +x /usr/local/bin/mdgrill
+   ```
+
+## Build from source
 
 ```sh
 make build
@@ -10,7 +21,7 @@ make build
 
 Produces `.build/mdgrill.app`.
 
-## Install
+## Install from source
 
 ```sh
 make install
