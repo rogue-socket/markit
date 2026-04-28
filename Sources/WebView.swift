@@ -191,11 +191,9 @@ struct WebView: NSViewRepresentable {
             let width = dict["width"] ?? 0
             let height = dict["height"] ?? 0
 
-            guard let webView = webView else { return .zero }
-
-            // Web viewport coords (top-left origin) → AppKit coords (bottom-left origin)
-            let flippedY = webView.bounds.height - y - height
-            return NSRect(x: x, y: flippedY, width: width, height: height)
+            // WKWebView is flipped (isFlipped=true), so its coordinate system
+            // matches web viewport coords: origin top-left, Y downward.
+            return NSRect(x: x, y: y, width: width, height: height)
         }
     }
 
@@ -203,59 +201,114 @@ struct WebView: NSViewRepresentable {
 
     static let injectedJS = """
     // --- Highlight painting ---
+    function findQuotePosition(fullText, ann) {
+        // Strategy 1: full triple match
+        const triple = ann.context_before + ann.quote + ann.context_after;
+        let idx = fullText.indexOf(triple);
+        if (idx !== -1) {
+            return idx + ann.context_before.length;
+        }
+
+        // Strategy 2: context_before + quote (without after)
+        if (ann.context_before.length > 0) {
+            const prefix = ann.context_before + ann.quote;
+            idx = fullText.indexOf(prefix);
+            if (idx !== -1) {
+                return idx + ann.context_before.length;
+            }
+        }
+
+        // Strategy 3: quote + context_after (without before)
+        if (ann.context_after.length > 0) {
+            const suffix = ann.quote + ann.context_after;
+            idx = fullText.indexOf(suffix);
+            if (idx !== -1) {
+                return idx;
+            }
+        }
+
+        // Strategy 4: just the quote (use first occurrence)
+        idx = fullText.indexOf(ann.quote);
+        if (idx !== -1) {
+            // If multiple occurrences, try to disambiguate with partial context
+            const nextIdx = fullText.indexOf(ann.quote, idx + 1);
+            if (nextIdx === -1) {
+                return idx; // unique match
+            }
+            // Ambiguous: try matching with shorter context
+            for (let ctx = ann.context_before.length; ctx >= 5; ctx -= 5) {
+                const partialBefore = ann.context_before.slice(-ctx);
+                const search = partialBefore + ann.quote;
+                const found = fullText.indexOf(search);
+                if (found !== -1) {
+                    return found + partialBefore.length;
+                }
+            }
+            return idx; // fall back to first occurrence
+        }
+
+        return -1; // truly orphaned
+    }
+
     function paintHighlights(annotations) {
         let orphanedCount = 0;
 
         for (const ann of annotations) {
             const fullText = document.body.textContent;
-            const searchStr = ann.context_before + ann.quote + ann.context_after;
-            const idx = fullText.indexOf(searchStr);
+            const quoteStart = findQuotePosition(fullText, ann);
 
-            if (idx === -1) {
+            if (quoteStart === -1) {
                 orphanedCount++;
                 continue;
             }
 
-            const quoteStart = idx + ann.context_before.length;
             const quoteEnd = quoteStart + ann.quote.length;
 
-            // Map global text offset to DOM text node + local offset
+            // Collect text nodes with their global offsets
             const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
             let currentOffset = 0;
-            let startNode = null, startOff = 0, endNode = null, endOff = 0;
+            const textNodes = [];
             let node;
 
             while (node = walker.nextNode()) {
                 const len = node.textContent.length;
-                if (!startNode && currentOffset + len > quoteStart) {
-                    startNode = node;
-                    startOff = quoteStart - currentOffset;
-                }
-                if (!endNode && currentOffset + len >= quoteEnd) {
-                    endNode = node;
-                    endOff = quoteEnd - currentOffset;
-                    break;
-                }
+                textNodes.push({ node: node, start: currentOffset, end: currentOffset + len });
                 currentOffset += len;
+                if (currentOffset >= quoteEnd) break;
             }
 
-            if (!startNode || !endNode) {
+            // Find which text nodes overlap with the quote range
+            const overlapping = textNodes.filter(tn => tn.end > quoteStart && tn.start < quoteEnd);
+
+            if (overlapping.length === 0) {
                 orphanedCount++;
                 continue;
             }
 
-            try {
-                const range = document.createRange();
-                range.setStart(startNode, startOff);
-                range.setEnd(endNode, endOff);
+            // Wrap each overlapping text node (or portion) in a highlight span
+            let painted = false;
+            for (const tn of overlapping) {
+                const wrapStart = Math.max(0, quoteStart - tn.start);
+                const wrapEnd = Math.min(tn.node.textContent.length, quoteEnd - tn.start);
+                if (wrapStart >= wrapEnd) continue;
 
-                const span = document.createElement('span');
-                span.className = 'mdgrill-hl';
-                span.dataset.annId = ann.id;
-                range.surroundContents(span);
-            } catch (e) {
-                orphanedCount++;
+                // Skip whitespace-only segments (newlines between block elements)
+                const segment = tn.node.textContent.substring(wrapStart, wrapEnd);
+                if (!segment.trim()) continue;
+
+                try {
+                    const r = document.createRange();
+                    r.setStart(tn.node, wrapStart);
+                    r.setEnd(tn.node, wrapEnd);
+                    const span = document.createElement('span');
+                    span.className = 'mdgrill-hl';
+                    span.dataset.annId = ann.id;
+                    r.surroundContents(span);
+                    painted = true;
+                } catch (e) {}
             }
+
+            if (!painted) orphanedCount++;
         }
 
         return orphanedCount;
@@ -263,15 +316,15 @@ struct WebView: NSViewRepresentable {
 
     // --- Remove highlight ---
     function removeHighlight(annId) {
-        const span = document.querySelector('.mdgrill-hl[data-ann-id=\"' + annId + '\"]');
-        if (span) {
+        const spans = document.querySelectorAll('.mdgrill-hl[data-ann-id=\"' + annId + '\"]');
+        spans.forEach(function(span) {
             const parent = span.parentNode;
             while (span.firstChild) {
                 parent.insertBefore(span.firstChild, span);
             }
             parent.removeChild(span);
             parent.normalize();
-        }
+        });
     }
 
     // --- Selection capture (Cmd+Shift+C) ---
@@ -283,7 +336,9 @@ struct WebView: NSViewRepresentable {
             if (!selection.rangeCount || selection.isCollapsed) return;
 
             const range = selection.getRangeAt(0);
-            const quote = selection.toString();
+            // Use range.toString() (not selection.toString()) for consistency
+            // with textContent used during highlight re-painting.
+            const quote = range.toString();
             if (!quote.trim()) return;
 
             const body = document.body;

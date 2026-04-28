@@ -33,7 +33,7 @@ struct MarkdownRenderer: MarkupVisitor {
     }
 
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) -> String {
-        "<blockquote>\n\(renderChildren(blockQuote))</blockquote>\n"
+        "<blockquote>\(renderChildren(blockQuote))</blockquote>\n"
     }
 
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) -> String {
@@ -52,36 +52,36 @@ struct MarkdownRenderer: MarkupVisitor {
     mutating func visitOrderedList(_ orderedList: OrderedList) -> String {
         let start = orderedList.startIndex
         let attr = start == 1 ? "" : " start=\"\(start)\""
-        return "<ol\(attr)>\n\(renderChildren(orderedList))</ol>\n"
+        return "<ol\(attr)>\(renderChildren(orderedList))</ol>\n"
     }
 
     mutating func visitUnorderedList(_ unorderedList: UnorderedList) -> String {
-        "<ul>\n\(renderChildren(unorderedList))</ul>\n"
+        "<ul>\(renderChildren(unorderedList))</ul>\n"
     }
 
     mutating func visitListItem(_ listItem: ListItem) -> String {
-        "<li>\(renderChildren(listItem))</li>\n"
+        "<li>\(renderChildren(listItem))</li>"
     }
 
     // MARK: - Table Elements
 
     mutating func visitTable(_ table: Table) -> String {
-        "<table>\n\(renderChildren(table))</table>\n"
+        "<table>\(renderChildren(table))</table>\n"
     }
 
     mutating func visitTableHead(_ tableHead: Table.Head) -> String {
         isInTableHeader = true
         let content = renderChildren(tableHead)
         isInTableHeader = false
-        return "<thead><tr>\(content)</tr></thead>\n"
+        return "<thead><tr>\(content)</tr></thead>"
     }
 
     mutating func visitTableBody(_ tableBody: Table.Body) -> String {
-        "<tbody>\n\(renderChildren(tableBody))</tbody>\n"
+        "<tbody>\(renderChildren(tableBody))</tbody>"
     }
 
     mutating func visitTableRow(_ tableRow: Table.Row) -> String {
-        "<tr>\(renderChildren(tableRow))</tr>\n"
+        "<tr>\(renderChildren(tableRow))</tr>"
     }
 
     mutating func visitTableCell(_ tableCell: Table.Cell) -> String {
