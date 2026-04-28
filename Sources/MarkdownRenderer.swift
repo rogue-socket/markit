@@ -178,7 +178,7 @@ struct MarkdownRenderer: MarkupVisitor {
         font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
         max-width: 720px;
         margin: 0 auto;
-        padding: 40px 24px;
+        padding: 4px 8px;
         line-height: 1.6;
         color: #24292f;
         background: #ffffff;
