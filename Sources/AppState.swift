@@ -9,6 +9,7 @@ final class AppState: ObservableObject {
     @Published var annotationStore: AnnotationStore?
     @Published var orphanedCount: Int = 0
     @Published var hudMessage: String?
+    let config: AppConfig = AppConfig.load()
 
     private init() {}
 }

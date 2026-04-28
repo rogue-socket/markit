@@ -15,7 +15,8 @@ struct WebView: NSViewRepresentable {
         ucc.add(context.coordinator, name: "highlightClicked")
         ucc.add(context.coordinator, name: "exportRequested")
 
-        let script = WKUserScript(source: Self.injectedJS, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
+        let js = Self.buildInjectedJS(config: AppState.shared.config)
+        let script = WKUserScript(source: js, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         ucc.addUserScript(script)
 
         config.userContentController = ucc
@@ -219,7 +220,15 @@ struct WebView: NSViewRepresentable {
 
     // MARK: - Injected JavaScript
 
-    static let injectedJS = """
+    static func buildInjectedJS(config: AppConfig) -> String {
+    """
+    const SHORTCUTS = \(config.jsConfigLiteral);
+
+    function matchesShortcut(e, s) {
+        return e.metaKey === s.meta && e.shiftKey === s.shift &&
+               e.altKey === s.alt && e.ctrlKey === s.ctrl && e.code === s.code;
+    }
+
     // --- Highlight painting ---
     function findQuotePosition(fullText, ann) {
         // Strategy 1: full triple match
@@ -347,9 +356,9 @@ struct WebView: NSViewRepresentable {
         });
     }
 
-    // --- Selection capture (Cmd+Shift+C) ---
+    // --- Selection capture ---
     document.addEventListener('keydown', function(e) {
-        if (e.metaKey && e.shiftKey && e.code === 'KeyC') {
+        if (matchesShortcut(e, SHORTCUTS.add_comment)) {
             e.preventDefault();
 
             const selection = window.getSelection();
@@ -397,12 +406,13 @@ struct WebView: NSViewRepresentable {
         }
     });
 
-    // --- Export (Cmd+E) ---
+    // --- Export ---
     document.addEventListener('keydown', function(e) {
-        if (e.metaKey && !e.shiftKey && e.code === 'KeyE') {
+        if (matchesShortcut(e, SHORTCUTS.export)) {
             e.preventDefault();
             window.webkit.messageHandlers.exportRequested.postMessage({});
         }
     });
     """
+    }
 }
