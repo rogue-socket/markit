@@ -13,6 +13,7 @@ struct WebView: NSViewRepresentable {
         let ucc = WKUserContentController()
         ucc.add(context.coordinator, name: "selectionCaptured")
         ucc.add(context.coordinator, name: "highlightClicked")
+        ucc.add(context.coordinator, name: "exportRequested")
 
         let script = WKUserScript(source: Self.injectedJS, injectionTime: .atDocumentEnd, forMainFrameOnly: true)
         ucc.addUserScript(script)
@@ -53,6 +54,8 @@ struct WebView: NSViewRepresentable {
                 handleSelectionCaptured(message.body)
             case "highlightClicked":
                 handleHighlightClicked(message.body)
+            case "exportRequested":
+                handleExport()
             default:
                 break
             }
@@ -158,6 +161,23 @@ struct WebView: NSViewRepresentable {
 
             let js = "removeHighlight('\(id)')"
             webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+
+        // MARK: Export
+
+        private func handleExport() {
+            guard let store = AppState.shared.annotationStore else { return }
+            let annotations = store.annotations
+            guard !annotations.isEmpty else { return }
+
+            let formatted = annotations.map { ann in
+                "> \(ann.quote)\n\n\(ann.comment)\n\n---"
+            }.joined(separator: "\n\n")
+
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(formatted, forType: .string)
+
+            AppState.shared.hudMessage = "\(annotations.count) annotation\(annotations.count == 1 ? "" : "s") copied"
         }
 
         // MARK: Highlight painting
@@ -374,6 +394,14 @@ struct WebView: NSViewRepresentable {
                 id: annId,
                 rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
             });
+        }
+    });
+
+    // --- Export (Cmd+E) ---
+    document.addEventListener('keydown', function(e) {
+        if (e.metaKey && !e.shiftKey && e.code === 'KeyE') {
+            e.preventDefault();
+            window.webkit.messageHandlers.exportRequested.postMessage({});
         }
     });
     """

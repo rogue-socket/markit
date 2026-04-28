@@ -8,6 +8,7 @@ final class AppState: ObservableObject {
     @Published var sourceFilePath: String?
     @Published var annotationStore: AnnotationStore?
     @Published var orphanedCount: Int = 0
+    @Published var hudMessage: String?
 
     private init() {}
 }

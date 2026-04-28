@@ -25,6 +25,11 @@ struct ContentView: View {
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
                             .padding(8)
                     }
+
+                    if let hud = appState.hudMessage {
+                        hudView(hud)
+                            .transition(.opacity)
+                    }
                 }
             } else {
                 emptyState
@@ -35,6 +40,23 @@ struct ContentView: View {
         } message: {
             Text(appState.errorMessage ?? "")
         }
+        .onChange(of: appState.hudMessage) { message in
+            if message != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    withAnimation { appState.hudMessage = nil }
+                }
+            }
+        }
+    }
+
+    private func hudView(_ message: String) -> some View {
+        Text(message)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyState: some View {
