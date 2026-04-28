@@ -13,7 +13,19 @@ struct ContentView: View {
     var body: some View {
         Group {
             if let html = appState.htmlContent {
-                WebView(htmlContent: html)
+                ZStack(alignment: .bottomTrailing) {
+                    WebView(htmlContent: html)
+
+                    if appState.orphanedCount > 0 {
+                        Text("\(appState.orphanedCount) orphaned")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+                            .padding(8)
+                    }
+                }
             } else {
                 emptyState
             }

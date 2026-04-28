@@ -45,6 +45,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppState.shared.sourceFilePath = path
         AppState.shared.htmlContent = html
         AppState.shared.errorMessage = nil
+        AppState.shared.annotationStore = AnnotationStore(sourceFilePath: path)
+        AppState.shared.orphanedCount = 0
 
         // Focus existing window
         NSApp.activate(ignoringOtherApps: true)
