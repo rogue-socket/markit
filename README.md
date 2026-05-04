@@ -4,6 +4,10 @@
 
 A lightweight, native macOS markdown annotation tool built with Swift and SwiftUI. Read markdown with rendered previews, select passages, attach notes, and export annotated quotes — perfect for code review, document feedback, research notes, and editorial markup. No Electron, no web app, no account required.
 
+## Screenshot
+
+![mdgrill app screenshot](assets/images/app-screenshot.png)
+
 **Key features:**
 - Render any `.md` file with full GitHub-flavored markdown support
 - Select text and attach inline comments
