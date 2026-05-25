@@ -61,10 +61,10 @@ struct ContentView: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Text("mdgrill")
+            Text("markit")
                 .font(.title2)
                 .foregroundColor(.secondary)
-            Text("Open a file: mdgrill path/to/file.md")
+            Text("Open a file: markit path/to/file.md")
                 .font(.body)
                 .foregroundColor(.secondary)
         }

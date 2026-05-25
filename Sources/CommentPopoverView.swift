@@ -11,6 +11,7 @@ struct CommentPopoverView: View {
     @FocusState private var isFocused: Bool
 
     private var isNewMode: Bool { existingComment == nil }
+    private var currentComment: String { existingComment ?? "" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -20,41 +21,28 @@ struct CommentPopoverView: View {
                 .lineLimit(3)
                 .truncationMode(.tail)
 
-            if isNewMode {
-                TextEditor(text: $comment)
-                    .font(.body)
-                    .frame(minHeight: 60, maxHeight: 100)
-                    .focused($isFocused)
+            TextEditor(text: $comment)
+                .font(.body)
+                .frame(minHeight: 60, maxHeight: 100)
+                .focused($isFocused)
 
-                HStack {
-                    Button("Cancel") { onDismiss() }
-                        .keyboardShortcut(.escape, modifiers: [])
-                    Spacer()
-                    Button("Save") { onSave?(comment) }
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .disabled(comment.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            } else {
-                ScrollView {
-                    Text(existingComment ?? "")
-                        .font(.body)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 100)
-
-                HStack {
-                    Button("Close") { onDismiss() }
-                        .keyboardShortcut(.escape, modifiers: [])
-                    Spacer()
+            HStack {
+                Button(isNewMode ? "Cancel" : "Close") { onDismiss() }
+                    .keyboardShortcut(.escape, modifiers: [])
+                Spacer()
+                if !isNewMode {
                     Button("Delete", role: .destructive) { onDelete?() }
                 }
+                Button("Save") { onSave?(comment) }
+                    .keyboardShortcut(.return, modifiers: .command)
+                    .disabled(comment.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .padding(12)
         .frame(width: 300)
         .onAppear {
-            if isNewMode { isFocused = true }
+            comment = currentComment
+            isFocused = true
         }
     }
 }

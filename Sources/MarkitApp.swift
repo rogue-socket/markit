@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct mdgrillApp: App {
+struct MarkitApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {

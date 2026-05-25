@@ -1,5 +1,25 @@
 import Foundation
 
+enum AppPaths {
+    static let appDirectoryName = ".markit"
+
+    private static var homeDirectory: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+    }
+
+    static var appDirectory: URL {
+        homeDirectory.appendingPathComponent(appDirectoryName)
+    }
+
+    static var configFile: URL {
+        appDirectory.appendingPathComponent("config.json")
+    }
+
+    static var annotationsDirectory: URL {
+        appDirectory.appendingPathComponent("annotations")
+    }
+}
+
 struct ShortcutConfig {
     let meta: Bool
     let shift: Bool
@@ -18,10 +38,7 @@ struct AppConfig {
     )
 
     static func load() -> AppConfig {
-        let path = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".mdgrill/config.json")
-
-        guard let data = try? Data(contentsOf: path),
+        guard let data = try? Data(contentsOf: AppPaths.configFile),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let shortcuts = json["shortcuts"] as? [String: String] else {
             return .default

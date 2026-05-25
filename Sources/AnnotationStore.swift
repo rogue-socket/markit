@@ -39,19 +39,17 @@ final class AnnotationStore {
         let hash = SHA256.hash(data: Data(sourceFilePath.utf8))
         let hashString = hash.map { String(format: "%02x", $0) }.joined()
 
-        let dir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(".mdgrill/annotations")
+        let dir = AppPaths.annotationsDirectory
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
         self.sidecarPath = dir.appendingPathComponent("\(hashString).json")
 
-        if let data = try? Data(contentsOf: sidecarPath),
-           let loaded = try? Self.makeDecoder().decode(SidecarFile.self, from: data) {
+        if let loaded = Self.loadSidecar(from: sidecarPath) {
             self.sidecar = loaded
+        } else if FileManager.default.fileExists(atPath: sidecarPath.path) {
+            fputs("markit: corrupt sidecar at \(sidecarPath.path), treating as empty\n", stderr)
+            self.sidecar = SidecarFile(sourceFile: sourceFilePath, schemaVersion: 1, annotations: [])
         } else {
-            if FileManager.default.fileExists(atPath: sidecarPath.path) {
-                fputs("mdgrill: corrupt sidecar at \(sidecarPath.path), treating as empty\n", stderr)
-            }
             self.sidecar = SidecarFile(sourceFile: sourceFilePath, schemaVersion: 1, annotations: [])
         }
     }
@@ -63,6 +61,20 @@ final class AnnotationStore {
 
     func delete(id: String) {
         sidecar.annotations.removeAll { $0.id == id }
+        persist()
+    }
+
+    func updateComment(id: String, comment: String) {
+        guard let index = sidecar.annotations.firstIndex(where: { $0.id == id }) else { return }
+        let annotation = sidecar.annotations[index]
+        sidecar.annotations[index] = Annotation(
+            id: annotation.id,
+            quote: annotation.quote,
+            contextBefore: annotation.contextBefore,
+            contextAfter: annotation.contextAfter,
+            comment: comment,
+            createdAt: annotation.createdAt
+        )
         persist()
     }
 
@@ -86,5 +98,10 @@ final class AnnotationStore {
         let d = JSONDecoder()
         d.dateDecodingStrategy = .iso8601
         return d
+    }
+
+    private static func loadSidecar(from url: URL) -> SidecarFile? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? makeDecoder().decode(SidecarFile.self, from: data)
     }
 }

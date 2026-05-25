@@ -136,11 +136,15 @@ struct WebView: NSViewRepresentable {
 
             let pop = NSPopover()
             pop.behavior = .transient
-            pop.contentSize = NSSize(width: 320, height: 160)
+            pop.contentSize = NSSize(width: 320, height: 200)
 
             let view = CommentPopoverView(
                 quote: annotation.quote,
                 existingComment: annotation.comment,
+                onSave: { [weak self] comment in
+                    self?.popover?.close()
+                    self?.updateAnnotationComment(id: annotation.id, comment: comment)
+                },
                 onDelete: { [weak self] in
                     self?.popover?.close()
                     self?.deleteAnnotation(id: annotation.id)
@@ -162,6 +166,11 @@ struct WebView: NSViewRepresentable {
 
             let js = "removeHighlight('\(id)')"
             webView?.evaluateJavaScript(js, completionHandler: nil)
+        }
+
+        private func updateAnnotationComment(id: String, comment: String) {
+            AppState.shared.annotationStore?.updateComment(id: id, comment: comment)
+            AppState.shared.hudMessage = "Comment updated"
         }
 
         // MARK: Export
@@ -330,7 +339,7 @@ struct WebView: NSViewRepresentable {
                     r.setStart(tn.node, wrapStart);
                     r.setEnd(tn.node, wrapEnd);
                     const span = document.createElement('span');
-                    span.className = 'mdgrill-hl';
+                    span.className = 'markit-hl';
                     span.dataset.annId = ann.id;
                     r.surroundContents(span);
                     painted = true;
@@ -345,7 +354,7 @@ struct WebView: NSViewRepresentable {
 
     // --- Remove highlight ---
     function removeHighlight(annId) {
-        const spans = document.querySelectorAll('.mdgrill-hl[data-ann-id=\"' + annId + '\"]');
+        const spans = document.querySelectorAll('.markit-hl[data-ann-id=\"' + annId + '\"]');
         spans.forEach(function(span) {
             const parent = span.parentNode;
             while (span.firstChild) {
@@ -395,7 +404,7 @@ struct WebView: NSViewRepresentable {
 
     // --- Highlight click handler ---
     document.addEventListener('click', function(e) {
-        const hl = e.target.closest('.mdgrill-hl');
+        const hl = e.target.closest('.markit-hl');
         if (hl) {
             const annId = hl.dataset.annId;
             const rect = hl.getBoundingClientRect();

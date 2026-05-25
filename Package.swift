@@ -2,14 +2,14 @@
 import PackageDescription
 
 let package = Package(
-    name: "mdgrill",
+    name: "markit",
     platforms: [.macOS(.v13)],
     dependencies: [
         .package(url: "https://github.com/apple/swift-markdown.git", from: "0.4.0")
     ],
     targets: [
         .executableTarget(
-            name: "mdgrill",
+            name: "markit",
             dependencies: [
                 .product(name: "Markdown", package: "swift-markdown")
             ],

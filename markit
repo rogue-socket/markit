@@ -1,0 +1,2 @@
+#!/bin/sh
+open -a markit "$1"

@@ -257,13 +257,13 @@ struct MarkdownRenderer: MarkupVisitor {
     }
     img { max-width: 100%; }
     del { text-decoration: line-through; }
-    .mdgrill-hl {
+    .markit-hl {
         background: rgba(255, 212, 0, 0.3);
         padding: 0 2px;
         border-radius: 2px;
         cursor: pointer;
     }
-    .mdgrill-hl:hover { background: rgba(255, 212, 0, 0.5); }
+    .markit-hl:hover { background: rgba(255, 212, 0, 0.5); }
     @media (prefers-color-scheme: dark) {
         body { color: #e6edf3; background: #0d1117; }
         h1, h2 { border-color: #30363d; }
